@@ -2,9 +2,9 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier # ML model that can pick up nonlinearity in data
 from sklearn.metrics import accuracy_score, precision_score
 
-#initial model (n_estimators is # individual decision trees trained, min_samples_split higher reduces likelihood of overfit but reduces accurary in 
+#initial model (n_estimators is # individual decision trees trained, min_samples_split higher reduces likelihood of overfit but reduces accurary in
 #training data, random_states ensures same results as long as data remains the same)
-# Data is in time series format, so all data in test set must come after all the data in the training set. 
+# Data is in time series format, so all data in test set must come after all the data in the training set.
 rf = RandomForestClassifier(n_estimators=50, min_samples_split=10, random_state=1)
 
 
@@ -31,8 +31,8 @@ def makePredictions(data, predictors):
 
     return combined, precision, accuracy
 
-def cleanData():
-    matches = pd.read_csv("matches.csv", index_col=0)
+def cleanData( filename):
+    matches = pd.read_csv(filename, index_col=0)
 
     #Cleaning data to be digestible by ML model (turning useful cols into numerical values)
     matches["date"] = pd.to_datetime(matches["date"])
@@ -57,16 +57,19 @@ def cleanData():
     return matchesRolling, predictors
 
 def main():
-    # #choosing how to measure the accuracy of the model is a really important decision
-    matches, predictors = cleanData()
-    combined, precision, accuracy = makePredictions(matches, predictors)
+    # data files
+    data_files = {'Premier League': 'matches_premier_league.csv', 'La Liga': 'matches_la_liga.csv', 'Seria A': 'matches_serie_a.csv', 'Bundesliga': 'matches_bundesliga.csv',
+             'Ligue 1': 'matches_ligue_1.csv'}
 
-    print(precision)
-    print(accuracy)
+    # Running and evaluating model for all the leagues
+    for league, data_file in data_files.items():
+        matches, predictors = cleanData(data_file)
+        combined, precision, accuracy = makePredictions(matches, predictors)
 
-    combined = combined.merge(matches[["date", "team", "opponent", "result"]], left_index=True, right_index=True)
-    print(combined)
+        print(f"{league} precision: {precision}, accuracy: {accuracy}")
 
+        combined = combined.merge(matches[['date', 'team', 'opponent', 'result']], left_index=True, right_index=True)
+        print(combined.head())
 
     #Can scrape more data, use more cols, use different ML models to improve accuracy
 
