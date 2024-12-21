@@ -3,13 +3,15 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 
-def createResultsDf():
-    
+# need to modify this to take in any fbref link and return the required results.
+
+def createResultsDf(league='Premier League', extension='12'):
+
     years = list(range(2025,2023, -1))
 
     all_matches = []
 
-    standingsUrl = "https://fbref.com/en/comps/9/Premier-League-Stats"
+    standingsUrl = f"https://fbref.com/en/comps/{extension}/"
 
     for year in years:
         data = requests.get(standingsUrl)
@@ -37,25 +39,33 @@ def createResultsDf():
             shootingStats = pd.read_html(data.text, match="Shooting")[0]
             shootingStats.columns = shootingStats.columns.droplevel()
 
-            try: 
+            try:
                 teamData = matches.merge(shootingStats[["Date", "Sh", "SoT", "Dist", "FK", "PK", "PKatt"]], on="Date")
             except ValueError:
                 continue
 
-            teamData = teamData[teamData["Comp"] == "Premier League"]
+            teamData = teamData[teamData["Comp"] == league]
             teamData["Season"] = year
             teamData["Team"] = teamName
             all_matches.append(teamData)
+            print(teamData.head())
+            print(f"finished with {teamUrl} in {year}")
             time.sleep(15)
 
 
-
+    print(f"finished getting data, making {league} csv")
     matchDf = pd.concat(all_matches)
     matchDf.columns = [c.lower() for c in matchDf.columns]
-    matchDf.to_csv("matches.csv")
+
+    league = '_'.join(league.lower().split(' '))
+    matchDf.to_csv(f"matches_{league}.csv")
 
 def main():
-    createResultsDf()
+    # fbref standing links partial links (extensions)
+    leagues = {'Premier League': '9', 'La Liga': '12', 'Serie A': '11', 'Bundesliga': '20', 'Ligue 1': '13'}
+
+    for league, extension in leagues.items():
+        createResultsDf(league, extension)
 
 if __name__ == '__main__':
     main()
